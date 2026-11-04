@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Servers · Server Monitor{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="section-head">
+    <h1>Servers</h1>
+  </div>
+  {% if error %}
+  <p class="error" role="alert">{{ error }}</p>
+  {% endif %}
+  <form class="add-form" method="post" action="{{ url_for('add_server') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>
+      Name
+      <input name="name" maxlength="80" required>
+    </label>
+    <label>
+      Host
+      <input name="host" maxlength="253" placeholder="hostname or IPv4" required>
+    </label>
+    <button type="submit">Add server</button>
+  </form>
+  {% if servers %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Host</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for server in servers %}
+        <tr>
+          <td><a href="{{ url_for('server_detail', server_id=server.id) }}">{{ server.name }}</a></td>
+          <td>{{ server.host }}</td>
+          <td>
+            <details>
+              <summary>Remove</summary>
+              <form method="post" action="{{ url_for('delete_server', server_id=server.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="confirm" value="yes">
+                <button class="danger" type="submit">Confirm remove</button>
+              </form>
+            </details>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">Add a server to begin.</p>
+  {% endif %}
+</section>
+{% endblock %}

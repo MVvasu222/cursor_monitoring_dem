@@ -1,0 +1,12 @@
+[
+  {
+    "id": "3a65fde4a2e34f27a37851882b365416",
+    "name": "This machine",
+    "host": "ubhive-azure-build"
+  },
+  {
+    "id": "aaf1a1d8a3144ce99ba6d8760d4b228f",
+    "name": "cursbox26",
+    "host": "20.235.34.15"
+  }
+]
