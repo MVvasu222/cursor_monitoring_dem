@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{ server.name }} · Server Monitor{% endblock %}
+{% block content %}
+<section
+  class="card"
+  id="monitor"
+  data-sample-url="{{ url_for('server_sample', server_id=server.id) }}"
+>
+  <div class="section-head">
+    <div>
+      <a class="back" href="{{ url_for('server_list') }}">All servers</a>
+      <h1>{{ server.name }}</h1>
+      <p class="muted">{{ server.host }}</p>
+    </div>
+    <span class="badge">Read only</span>
+  </div>
+  <p id="sample-error" class="error" {% if not payload.error %}hidden{% endif %}>{{ payload.error or "" }}</p>
+  {% set sample = payload.sample %}
+  <div class="tiles">
+    <article class="tile">
+      <h2>CPU</h2>
+      <p class="metric-value" id="cpu-value">{% if sample %}{{ "%.1f"|format(sample.cpu_percent) }}%{% else %}—{% endif %}</p>
+      <p class="muted" id="cpu-load">{% if sample %}Load {{ sample.load|join(" ") }}{% endif %}</p>
+      <canvas id="cpu-chart" height="120"></canvas>
+    </article>
+    <article class="tile">
+      <h2>Memory</h2>
+      <p class="metric-value" id="memory-value">{% if sample %}{{ "%.1f"|format(sample.memory.percent) }}%{% else %}—{% endif %}</p>
+      <p class="muted" id="memory-detail">{% if sample %}{{ sample.memory.used|bytes }} used · {{ sample.memory.free|bytes }} free{% endif %}</p>
+      <canvas id="memory-chart" height="120"></canvas>
+    </article>
+    <article class="tile">
+      <h2>Disk</h2>
+      <p class="metric-value" id="disk-value">{% if sample %}{{ "%.1f"|format(sample.disks|selectattr("mount", "equalto", "/")|map(attribute="percent")|first|default(0)) }}%{% else %}—{% endif %}</p>
+      <p class="muted">Root filesystem</p>
+      <canvas id="disk-chart" height="120"></canvas>
+    </article>
+    <article class="tile">
+      <h2>Network</h2>
+      <p class="metric-value" id="network-value">{% if sample %}{{ sample.rate_in|bytes }}/s{% else %}—{% endif %}</p>
+      <p class="muted" id="network-detail">{% if sample %}In {{ sample.rate_in|bytes }}/s · Out {{ sample.rate_out|bytes }}/s{% endif %}</p>
+      <canvas id="network-chart" height="120"></canvas>
+    </article>
+  </div>
+
+  <h2>Filesystems</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Mount</th><th>Used</th><th>Free</th><th>Percent</th></tr>
+      </thead>
+      <tbody id="disk-rows">
+        {% for disk in sample.disks if sample %}
+        <tr>
+          <td>{{ disk.mount }}</td>
+          <td>{{ disk.used|bytes }}</td>
+          <td>{{ disk.free|bytes }}</td>
+          <td>{{ "%.1f"|format(disk.percent) }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Interfaces</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Name</th><th>In</th><th>Out</th></tr>
+      </thead>
+      <tbody id="nic-rows">
+        {% for nic in sample.interfaces if sample %}
+        <tr>
+          <td>{{ nic.name }}</td>
+          <td>{{ nic.bytes_in|bytes }}</td>
+          <td>{{ nic.bytes_out|bytes }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Listening ports</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Port</th><th>Protocol</th><th>Address</th><th>Process</th></tr>
+      </thead>
+      <tbody id="port-rows">
+        {% for port in sample.ports if sample %}
+        <tr>
+          <td>{{ port.port }}</td>
+          <td>{{ port.protocol }}</td>
+          <td>{{ port.address }}</td>
+          <td>{{ port.process }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+<script id="initial-sample" type="application/json">{{ payload|tojson }}</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='monitor.js') }}"></script>
+{% endblock %}

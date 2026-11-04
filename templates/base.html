@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Server Monitor{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('server_list') if session.user else url_for('login') }}">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>
+        <span class="eyebrow">Local demo</span>
+        <span class="title">Server Monitor</span>
+      </span>
+    </a>
+    {% if session.user %}
+    <form method="post" action="{{ url_for('logout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="ghost" type="submit">Sign out</button>
+    </form>
+    {% endif %}
+  </header>
+  <main class="stage">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

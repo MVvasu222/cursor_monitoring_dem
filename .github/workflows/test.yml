@@ -1,0 +1,22 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Run tests
+        run: pytest
+        env:
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD_HASH: "scrypt:32768:8:1$Cdrsl1pTxtBdRHXD$ffc05b335ab1ce88161733d194f45fe9ba983b6467122b3494894f80856e03d2b7768113fd8346dabf721d4ea199b836726a0bd1a16a1b9be8a99789676cd7f2"
+          FLASK_SECRET_KEY: ci-secret-key
