@@ -29,6 +29,7 @@ def create_app(*, load_env=True):
         SESSION_COOKIE_SECURE=False,
     )
     app.add_template_filter(format_bytes, name="bytes")
+    app.add_template_filter(format_timestamp, name="timestamp")
 
     @app.before_request
     def require_login():
@@ -45,7 +46,7 @@ def create_app(*, load_env=True):
     @app.route("/login", methods=["GET", "POST"])
     def login():
         if session.get("user") == username and request.method == "GET":
-            return redirect(url_for("server_list"))
+            return redirect(url_for("dashboard"))
         if request.method == "GET":
             return render_template("login.html", error=None)
 
@@ -58,7 +59,7 @@ def create_app(*, load_env=True):
         session.clear()
         session["user"] = username
         session["csrf_token"] = secrets.token_urlsafe(32)
-        return redirect(url_for("server_list"))
+        return redirect(url_for("dashboard"))
 
     @app.post("/logout")
     def logout():
@@ -68,8 +69,25 @@ def create_app(*, load_env=True):
         return redirect(url_for("login"))
 
     @app.get("/")
+    def dashboard():
+        saved = servers.list_servers()
+        server = saved[0] if saved else None
+        payload = metrics.record_sample()
+        return render_template(
+            "dashboard.html",
+            server=server,
+            payload=payload,
+            summary=_summary(payload.get("sample")),
+        )
+
+    @app.get("/servers")
     def server_list():
         return render_template("servers.html", servers=servers.list_servers(), error=None)
+
+    @app.get("/history")
+    def history():
+        payload = metrics.record_sample()
+        return render_template("history.html", points=list(reversed(payload["history"])))
 
     @app.post("/servers")
     def add_server():
@@ -107,6 +125,23 @@ def create_app(*, load_env=True):
         return response
 
     return app
+
+
+def _summary(sample):
+    if not sample:
+        return None
+    root = next((disk["percent"] for disk in sample["disks"] if disk["mount"] == "/"), None)
+    return {
+        "cpu": sample["cpu_percent"],
+        "memory": sample["memory"]["percent"],
+        "disk": root,
+    }
+
+
+def format_timestamp(value):
+    from datetime import datetime
+
+    return datetime.fromtimestamp(value).strftime("%H:%M:%S")
 
 
 def format_bytes(value):

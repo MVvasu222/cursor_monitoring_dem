@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}History · Server Monitor{% endblock %}
+{% block content %}
+<section class="home">
+  <h1>History</h1>
+  <p class="lede">About the last 5 minutes on this machine. A restart clears this list.</p>
+  {% if points %}
+  <div class="table-wrap summary-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>CPU</th>
+          <th>Memory</th>
+          <th>Disk</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for point in points %}
+        <tr>
+          <td>{{ point.ts|timestamp }}</td>
+          <td>{{ "%.1f"|format(point.cpu_percent) }}%</td>
+          <td>{{ "%.1f"|format(point.memory.percent) }}%</td>
+          <td>
+            {% for disk in point.disks if disk.mount == "/" %}
+            {{ "%.1f"|format(disk.percent) }}%
+            {% else %}
+            —
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="quiet">No samples yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

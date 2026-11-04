@@ -4,7 +4,8 @@ def test_valid_login(client):
     assert response.headers["Location"].endswith("/")
     page = client.get("/")
     assert page.status_code == 200
-    assert b"Add a server to begin." in page.data
+    assert b"No alerts." in page.data
+    assert b"CPU" in page.data
     cookie = response.headers["Set-Cookie"]
     assert "HttpOnly" in cookie
     assert "SameSite=Lax" in cookie

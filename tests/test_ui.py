@@ -15,7 +15,7 @@ def _csrf(html):
 
 def test_add_shows_row_duplicate_errors_remove_drops_row(client):
     _login(client)
-    page = client.get("/")
+    page = client.get("/servers")
     token = _csrf(page.data)
     added = client.post(
         "/servers",
@@ -48,13 +48,25 @@ def test_add_shows_row_duplicate_errors_remove_drops_row(client):
 
 def test_remove_without_confirm_keeps_the_row(client):
     _login(client)
-    token = _csrf(client.get("/").data)
+    token = _csrf(client.get("/servers").data)
     client.post("/servers", data={"csrf_token": token, "name": "Edge", "host": "10.1.1.8"})
-    token = _csrf(client.get("/").data)
+    token = _csrf(client.get("/servers").data)
     server_id = servers.list_servers()[0]["id"]
     denied = client.post(f"/servers/{server_id}/delete", data={"csrf_token": token})
     assert denied.status_code == 400
     assert servers.list_servers()[0]["host"] == "10.1.1.8"
+
+
+def test_dashboard_links_to_the_saved_server(client, monkeypatch):
+    import metrics
+
+    monkeypatch.setattr(metrics, "collect_sample", lambda: _sample())
+    _login(client)
+    record = servers.add_server("This machine", "127.0.0.1")
+    page = client.get("/")
+    assert b"This machine" in page.data
+    assert b"No alerts." in page.data
+    assert f"/servers/{record['id']}".encode() in page.data
 
 
 def test_detail_is_read_only(client, monkeypatch):
